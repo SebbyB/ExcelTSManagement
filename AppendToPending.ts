@@ -1,45 +1,39 @@
 
-enum issueType{
-    CPRPULL,
-    TRANSMITTED_ORDER_NOT_PROCESSED,
-    TRACKING_TEST_ORDERED_INCORRECTLY,
-    MISLABEL_BY_TEST,
-    MISLABEL_BY_TYPE,
-}
-function main(workbook: ExcelScript.Workbook, employeeID : number, issueType: issueType, testMneumonic:string, accession : string, relatedAccessions : string[], eitNeeded : boolean, resolvedBy : number) {
-    
- //This just gets the active worksheet
+function main(workbook: ExcelScript.Workbook, employeeID: number, issueType: string, testMneumonic: string, accession: string, eitNeeded: boolean, resolvedBy: number, relatedAccessions ?: string[]) {
+
+    //This just gets the active worksheet
     let sheet = workbook.getActiveWorksheet();
 
-//Formats the employee information in a way that the sheet uses. 
-    let currentDate : Date = new Date();
-    let empAdded : string = employeeID.toString() + ", "+ currentDate.toDateString();
+    //Formats the employee information in a way that the sheet uses. 
+    let currentDate: Date = new Date();
+    let empAdded: string = employeeID.toString() + ", " + currentDate.toDateString();
 
 
-//This is for the related Accessions column
+    //This is for the related Accessions column
     //Declares a string to be added to the column later. 
-    let relatedAccession : string= "";
+    let relatedAccession: string = "";
     //Since the parameter can be a list of accessions, a single accession, or nothing, we need to check for each case.
     //If it is an array
-    if(Array.isArray(relatedAccessions)){
+    if (Array.isArray(relatedAccessions)) {
         // If the array is empty it will use the empty string.
-        if(relatedAccessions.length < 1){
+        if (relatedAccessions.length < 1) {
+        }
+        //If the length is one it will simply convert to string.
+        else if(relatedAccession.length === 1){
+            relatedAccession = relatedAccessions[0];
         }
         //Otherwise it will iterate throught the list and create a string to be added to the column.
-        else{
+        else {
             relatedAccessions.forEach(accession => {
-                relatedAccession += (accession+", " ) 
+                relatedAccession += (accession + ", ")
             });
         }
-    //If the parameter is not an array it will simply add the empty string to the column.
-    }
-    else{
-        relatedAccession = relatedAccessions;
+        //If the parameter is not an array it will simply add the empty string to the column.
     }
 
 
     // Data to append, it can either be string, number or bool.
-    let newData: (string | number | boolean)[] = [empAdded, issueType,testMneumonic ,accession, relatedAccession, eitNeeded, "",resolvedBy];
+    let newData: (string | number | boolean)[] = [empAdded, issueType, testMneumonic, accession, relatedAccession, "" ,eitNeeded, resolvedBy];
 
     // Columns to check for duplicates
     const columnCIndex = 2; // Column C is index 2
@@ -70,6 +64,16 @@ function main(workbook: ExcelScript.Workbook, employeeID : number, issueType: is
         let previousRowRange = sheet.getRangeByIndexes(lastRow - 1, 0, 1, newData.length);
         newRange.copyFrom(previousRowRange, ExcelScript.RangeCopyType.formats);
 
+        //If an EIT is needed it will make it the appropriate color.
+    
+        let fill = newRange.getColumn(5).getFormat().getFill();
+
+        if(eitNeeded){
+            fill.setColor('orange');
+        }
+        else{
+            fill.setColor('green');
+        }
         console.log("New row added successfully.");
     } else {
         console.log("The sheet is empty. Appending as the first row.");
